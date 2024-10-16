@@ -14,11 +14,12 @@ ffmpeg
 **v4lrecorder** - script to record video with audio in 1-minute chunks
 
 1. Identify video and audio devices:
+   
 v4l2-ctl --list-devices
-
 arecord -L
 
 3. Select the maximum resolution and frame rate:
+
 v4l2-ctl -d /dev/video0 --list-formats-ex
 
 4. Edit the variables in the script
@@ -30,6 +31,7 @@ v4l2-ctl -d /dev/video0 --list-formats-ex
 1. Edit the variables in the script
 
 2. Run it through the crontab
+
 2,12,22,32,42,52 * * * * root /opt/v4lrecorder/mergerecords >>/var/log/recorder/
 merge.log 2>&1
 
