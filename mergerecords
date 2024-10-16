@@ -1,0 +1,59 @@
+#!/bin/bash
+
+INPUT_DIR="/u06/camera/tmp"
+OUTPUT_DIR="/u06/camera/video"
+
+cd $INPUT_DIR
+FILES=$(ls *.ts)
+
+CURLIST="/tmp/mergerecords.txt"
+CURMIN=""
+
+>$CURLIST
+
+for FILE in $FILES; do
+
+	YY="${FILE:0:4}"
+	MM="${FILE:4:2}"
+	DD="${FILE:6:2}"
+	H="${FILE:9:2}"
+	MIN="${FILE:11:1}"
+	OUT=$OUTPUT_DIR/$YY/$MM/$DD
+	CURNAME="$OUT/$H${MIN}0-$DD$MM.mp4"
+
+	if [[ $CURMIN != $MIN ]]; then
+		if [ -s $CURLIST ]; then
+
+			echo "Procesing:"
+			cat $CURLIST
+			echo "into $FNAME"
+
+			mkdir -p "$OUT"
+			if [ -s $FNAME ]; then
+				echo "file exist, skiping ..."
+				continue
+			fi
+
+			ffmpeg -f concat -safe 0 -i $CURLIST -c copy "$FNAME"
+			if [ $? -eq 0 ]; then
+				while IFS= read -r line; do
+					filename=$(echo "$line" | cut -d"'" -f2)
+					if [ -e "$filename" ]; then
+						echo "rm $filename"
+						rm "$filename"
+					fi
+				done <$CURLIST
+			fi
+			echo "Done."
+
+		else
+			FNAME=$CURNAME
+		fi
+
+		CURMIN=$MIN
+		>$CURLIST
+		FNAME=$CURNAME
+	fi
+
+	echo "file '$INPUT_DIR/$FILE'" >>$CURLIST
+done

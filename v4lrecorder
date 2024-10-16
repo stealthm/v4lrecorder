@@ -1,0 +1,47 @@
+#!/bin/bash
+
+VIDEODEV="/dev/video0"
+AUDIODEV="plughw:C4K,0"
+SIZEDEV="3840x2160"
+
+OUTPUT_DIR="/u06/camera/tmp"
+LOG=/var/log/recorder/record.log
+
+BITRATE="3000k"
+SEGMENT_DURATION=60
+
+cd $OUTPUT_DIR
+
+v4l2-ctl -d $VIDEODEV 2>/dev/null
+
+if [ $? -ne 0 ]; then
+	echo "Error open $VIDEODEV ..."
+	exit
+fi
+
+if [ ! -d "$OUTPUT_DIR" ]; then
+	mkdir -p $OUTPUT_DIR
+fi
+
+if [ ! -e "$LOG_FILE" ]; then
+	mkdir -p "$(dirname "$LOG_FILE")"
+fi
+
+while true; do
+
+	ffmpeg \
+		-f alsa -ac 1 -i $AUDIODEV \
+		-f v4l2 -input_format mjpeg -framerate 25 -video_size $SIZEDEV -i $VIDEODEV \
+		-vf "scale=1920:1080" -c:v libx264 -b:v $BITRATE -preset veryfast -x264opts keyint=50 -g 50 -pix_fmt yuv420p \
+		-c:a aac -b:a 128k \
+		-f segment -segment_time $SEGMENT_DURATION -reset_timestamps 1 \
+		-max_interleave_delta 0 \
+		-strftime 1 %Y%m%d_%H%M%S.ts 1>>$LOG 2>>$LOG
+
+	if [ $? -ne 0 ]; then
+		echo "ffmpeg error, restart 5 seconds..." 1>>$LOG
+		sleep 5
+	else
+		break
+	fi
+done
