@@ -16,6 +16,7 @@ ffmpeg
 1. Identify video and audio devices:
    
 v4l2-ctl --list-devices
+
 arecord -L
 
 3. Select the maximum resolution and frame rate:
